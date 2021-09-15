@@ -22,8 +22,8 @@ uint8_t E2Prom_Test_Write_FF[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
 uint8_t E2Prom_Test_Write_00[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 uint8_t E2Prom_Test_Read[9] = {0x00};
 uint8_t E2Prom_Test_Read1[9] = {0x00};
-#define BLINK_BLUE_GPIO 33
-#define BLINK_Yellow_GPIO 13
+#define BLINK_BLUE_GPIO 21
+#define BLINK_Yellow_GPIO 23
 uint8_t UART1_RX_data[9];
 int length = 0;
 
@@ -96,7 +96,7 @@ void app_main(void)
     gpio_set_direction(BLINK_BLUE_GPIO, GPIO_MODE_OUTPUT);
     gpio_pad_select_gpio(BLINK_Yellow_GPIO);
     gpio_set_direction(BLINK_Yellow_GPIO, GPIO_MODE_OUTPUT);
-    
+
     E2prom_Init();
     Uart0_Init();
     gpio_set_level(BLINK_Yellow_GPIO, 1);

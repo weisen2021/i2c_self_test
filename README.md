@@ -1,6 +1,14 @@
 # I2C Self-Test Example 
 对EEPRom进行读写稳定性试验
-I2C_MASTER_SCL_IO 14    
-I2C_MASTER_SDA_IO 27     
-BLINK_BLUE_GPIO 33
-BLINK_Yellow_GPIO 13
+I2C_MASTER_SCL_IO 33    
+I2C_MASTER_SDA_IO 32     
+BLINK_BLUE_GPIO 21
+BLINK_Yellow_GPIO 23
+
+# 试验方法
+1、电脑串口发送9字节的数据，
+2、当mcu判断接收到数据后，将EEPROM中的指定位置全部置1，并将串口数据写入到指定内存中；
+3、EEPROM读取这个位置的数据；
+4、在EEPROM中的指定位置写入固定的数据；
+5、EEPROM读取写入的固定数据；
+6、判断存储的串口发送的数据在EEPROM中有没有改变，改变就亮红灯，没变就亮蓝灯。
