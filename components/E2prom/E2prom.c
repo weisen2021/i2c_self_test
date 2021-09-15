@@ -46,6 +46,12 @@ void E2prom_Init(void)
 
     At24_Mutex = xSemaphoreCreateMutex();
 
+    #if E2PROM_WP_EN
+    gpio_pad_select_gpio(E2PROM_WP_GPIO);
+    gpio_set_direction(E2PROM_WP_GPIO, GPIO_MODE_OUTPUT);
+	gpio_set_level(E2PROM_WP_GPIO, 1);
+    #endif
+
     while (E2P_Check() != true)
     {
         vTaskDelay(1000 / portTICK_RATE_MS);
@@ -58,6 +64,26 @@ void E2prom_Init(void)
 
 esp_err_t AT24CXX_WriteOneByte(uint16_t reg_addr, uint8_t dat)
 {
+     #if E2PROM_WP_EN
+    gpio_set_level(E2PROM_WP_GPIO, 0);
+
+    esp_err_t ret;
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd);
+    i2c_master_write_byte(cmd, (DEV_ADD + ((reg_addr / 256) << 1)), ACK_CHECK_EN);
+    i2c_master_write_byte(cmd, (reg_addr % 256), ACK_CHECK_EN);
+    i2c_master_write_byte(cmd, dat, ACK_CHECK_EN);
+    i2c_master_stop(cmd);
+    ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
+    i2c_cmd_link_delete(cmd);
+    vTaskDelay(20 / portTICK_RATE_MS);
+
+    gpio_set_level(E2PROM_WP_GPIO, 1);
+    return ret;
+    
+
+    #else
+
     esp_err_t ret;
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
@@ -69,6 +95,8 @@ esp_err_t AT24CXX_WriteOneByte(uint16_t reg_addr, uint8_t dat)
     i2c_cmd_link_delete(cmd);
     vTaskDelay(20 / portTICK_RATE_MS);
     return ret;
+
+    #endif
 }
 
 esp_err_t AT24CXX_ReadOneByte(uint16_t reg_addr, uint8_t *data)
@@ -132,6 +160,31 @@ esp_err_t AT24_Read(uint16_t reg_addr, uint8_t *dat, uint16_t len)
 
 esp_err_t FM24C_WriteOneByte(uint16_t reg_addr, uint8_t dat)
 {
+    #if E2PROM_WP_EN
+    gpio_set_level(E2PROM_WP_GPIO, 0);
+
+    esp_err_t ret;
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd);
+
+    i2c_master_write_byte(cmd, DEV_ADD, ACK_CHECK_EN);
+    i2c_master_write_byte(cmd, (reg_addr / 256), ACK_CHECK_EN);
+    i2c_master_write_byte(cmd, (reg_addr % 256), ACK_CHECK_EN);
+
+    i2c_master_write_byte(cmd, dat, ACK_CHECK_EN); //send data value
+
+    i2c_master_stop(cmd);
+    ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
+    i2c_cmd_link_delete(cmd);
+    vTaskDelay(10 / portTICK_RATE_MS);
+
+    gpio_set_level(E2PROM_WP_GPIO, 1);
+
+    return ret;
+    
+
+    #else
+      
     esp_err_t ret;
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
@@ -148,6 +201,8 @@ esp_err_t FM24C_WriteOneByte(uint16_t reg_addr, uint8_t dat)
     vTaskDelay(10 / portTICK_RATE_MS);
 
     return ret;
+
+    #endif
 }
 
 // esp_err_t FM24C_ReadOneByte(uint16_t reg_addr, uint8_t *data)
@@ -700,22 +755,24 @@ static bool E2P_Check(void)
     uint8_t fail_num = 0;
     // temp = E2P_ReadOneByte(E2P_SIZE - 1);
 
+    #if E2PROM_WP_EN
+    gpio_set_level(E2PROM_WP_GPIO, 0);
     while (1)
     {
-        // cmd = i2c_cmd_link_create();
-        // i2c_master_start(cmd);
-        // i2c_master_write_byte(cmd, AT_DEV_ADD, ACK_CHECK_EN);
-        // i2c_master_stop(cmd);
-        // ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 50 / portTICK_RATE_MS);
-        // i2c_cmd_link_delete(cmd);
-        // if (ret == ESP_OK)
-        // {
-        //     ESP_LOGI(TAG, "Use AT rom");
-        //     E2P_M = 0;
-        //     E2P_SIZE = AT_E2P_SIZE;
-        //     DEV_ADD = AT_DEV_ADD;
-        //     break;
-        // }
+        cmd = i2c_cmd_link_create();
+        i2c_master_start(cmd);
+        i2c_master_write_byte(cmd, AT_DEV_ADD, ACK_CHECK_EN);
+        i2c_master_stop(cmd);
+        ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 50 / portTICK_RATE_MS);
+        i2c_cmd_link_delete(cmd);
+        if (ret == ESP_OK)
+        {
+            ESP_LOGI(TAG, "Use AT rom");
+            E2P_M = 0;
+            E2P_SIZE = 1024;
+            DEV_ADD = AT_DEV_ADD;
+            break;
+        }
 
         cmd = i2c_cmd_link_create();
         i2c_master_start(cmd);
@@ -727,7 +784,7 @@ static bool E2P_Check(void)
         {
             ESP_LOGI(TAG, "Use FE rom");
             E2P_M = 1;
-            E2P_SIZE = FE_E2P_SIZE;
+            E2P_SIZE = 8 * 1024;
             DEV_ADD = FE_DEV_ADD;
             break;
         }
@@ -739,9 +796,7 @@ static bool E2P_Check(void)
             return false;
         }
     }
-
-    // AT24_Read((E2P_SIZE - 100), &temp, 1);
-    // ESP_LOGI(TAG, "temp:%2x", temp);
+    gpio_set_level(E2PROM_WP_GPIO, 1);
 
     if (E2P_M)
         FM24C_Read((E2P_SIZE - 1), &temp, 1);
@@ -749,17 +804,13 @@ static bool E2P_Check(void)
         AT24_Read((E2P_SIZE - 1), &temp, 1);
 
     ESP_LOGI(TAG, "temp:%2x", temp);
-
     if (temp == 0XFF)
     {
-        FM24C_Write(E2P_SIZE - 1, &Check_dat, 1);
-
         if (E2P_M)
             FM24C_Read((E2P_SIZE - 10), &temp, 1);
         else
             AT24_Read((E2P_SIZE - 10), &temp, 1);
 
-        ESP_LOGI(TAG, "temp:%2x", temp);
         if (temp == 0XFF)
         {
             ESP_LOGI(TAG, "\nnew eeprom\n");
@@ -778,13 +829,101 @@ static bool E2P_Check(void)
         {
             FM24C_Write(E2P_SIZE - 1, &Check_dat, 1);
             FM24C_Read((E2P_SIZE - 1), &temp, 1);
-            ESP_LOGI(TAG, "temp:%2x", temp);
         }
         else
         {
             AT24_Write(E2P_SIZE - 1, &Check_dat, 1);
             AT24_Read((E2P_SIZE - 1), &temp, 1);
-            ESP_LOGI(TAG, "temp:%2x", temp);
+        }
+
+        if (temp == Check_dat)
+        {
+            ESP_LOGI(TAG, "eeprom check ok 2!\n");
+            return true;
+        }
+    }    
+    ESP_LOGI(TAG, "eeprom check fail!\n");
+    return false;
+    
+
+    #else
+
+    while (1)
+    {
+        cmd = i2c_cmd_link_create();
+        i2c_master_start(cmd);
+        i2c_master_write_byte(cmd, AT_DEV_ADD, ACK_CHECK_EN);
+        i2c_master_stop(cmd);
+        ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 50 / portTICK_RATE_MS);
+        i2c_cmd_link_delete(cmd);
+        if (ret == ESP_OK)
+        {
+            ESP_LOGI(TAG, "Use AT rom");
+            E2P_M = 0;
+            E2P_SIZE = 1024;
+            DEV_ADD = AT_DEV_ADD;
+            break;
+        }
+
+        cmd = i2c_cmd_link_create();
+        i2c_master_start(cmd);
+        i2c_master_write_byte(cmd, FE_DEV_ADD, ACK_CHECK_EN);
+        i2c_master_stop(cmd);
+        ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 50 / portTICK_RATE_MS);
+        i2c_cmd_link_delete(cmd);
+        if (ret == ESP_OK)
+        {
+            ESP_LOGI(TAG, "Use FE rom");
+            E2P_M = 1;
+            E2P_SIZE = 8 * 1024;
+            DEV_ADD = FE_DEV_ADD;
+            break;
+        }
+
+        fail_num++;
+        if (fail_num > 5)
+        {
+            ESP_LOGE(TAG, "E2p Check ERR");
+            return false;
+        }
+    }
+
+    if (E2P_M)
+        FM24C_Read((E2P_SIZE - 1), &temp, 1);
+    else
+        AT24_Read((E2P_SIZE - 1), &temp, 1);
+
+    ESP_LOGI(TAG, "temp:%2x", temp);
+    if (temp == 0XFF)
+    {
+        if (E2P_M)
+            FM24C_Read((E2P_SIZE - 10), &temp, 1);
+        else
+            AT24_Read((E2P_SIZE - 10), &temp, 1);
+
+        if (temp == 0XFF)
+        {
+            ESP_LOGI(TAG, "\nnew eeprom\n");
+            E2prom_set_defaul(false);
+        }
+    }
+
+    if (temp == Check_dat)
+    {
+        ESP_LOGI(TAG, "eeprom check ok 1!\n");
+        return true;
+    }
+    else //排除第一次初始化的情况
+    {
+        if (E2P_M)
+        {
+            FM24C_Write(E2P_SIZE - 1, &Check_dat, 1);
+            FM24C_Read((E2P_SIZE - 1), &temp, 1);
+        }
+        else
+        {
+            AT24_Write(E2P_SIZE - 1, &Check_dat, 1);
+            AT24_Read((E2P_SIZE - 1), &temp, 1);
         }
 
         if (temp == Check_dat)
@@ -795,6 +934,8 @@ static bool E2P_Check(void)
     }
     ESP_LOGI(TAG, "eeprom check fail!\n");
     return false;
+
+    #endif
 }
 
 esp_err_t Nvs_Write_32(const char *Key, uint32_t dat)

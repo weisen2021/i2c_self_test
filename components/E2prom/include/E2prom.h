@@ -5,8 +5,8 @@
 #include "freertos/FreeRTOS.h"
 
 #if 1
-#define I2C_MASTER_SCL_IO 14     /*!< gpio number for I2C master clock */
-#define I2C_MASTER_SDA_IO 27     /*!< gpio number for I2C master data  */
+#define I2C_MASTER_SCL_IO 33     /*!< gpio number for I2C master clock */
+#define I2C_MASTER_SDA_IO 32     /*!< gpio number for I2C master data  */
 #define I2C_MASTER_NUM I2C_NUM_1 /*!< I2C port number for master dev */
 
 #else
@@ -24,6 +24,10 @@
 #define ACK_CHECK_DIS 0x0 /*!< I2C master will not check ack from slave */
 #define ACK_VAL 0x0       /*!< I2C ack value */
 #define NACK_VAL 0x1      /*!< I2C nack value */
+
+#define E2PROM_WP_EN 1U //通过将E2PROM_WP_EN定义为0U和1U来切换是否用写保护，1U写保护，OU不用写保护
+
+#define E2PROM_WP_GPIO 15 //将GPIO15定义为EEPROM的写保护引脚
 
 #define FE_E2P_SIZE 2 * 1024
 #define FE_DEV_ADD 0XAE

@@ -86,10 +86,17 @@ static void i2c_test_task(void *arg)
 
 void app_main(void)
 {
+    #if E2PROM_WP_EN
+	gpio_pad_select_gpio(E2PROM_WP_GPIO);
+    gpio_set_direction(E2PROM_WP_GPIO, GPIO_MODE_OUTPUT);
+	gpio_set_level(E2PROM_WP_GPIO, 1);
+	#endif
+
     gpio_pad_select_gpio(BLINK_BLUE_GPIO);
     gpio_set_direction(BLINK_BLUE_GPIO, GPIO_MODE_OUTPUT);
     gpio_pad_select_gpio(BLINK_Yellow_GPIO);
     gpio_set_direction(BLINK_Yellow_GPIO, GPIO_MODE_OUTPUT);
+    
     E2prom_Init();
     Uart0_Init();
     gpio_set_level(BLINK_Yellow_GPIO, 1);
