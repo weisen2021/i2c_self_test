@@ -17,9 +17,4 @@ BLINK_Yellow_GPIO 17
 1、通过在人感的板子上试验EEPROM的写保护；
 2、GPIO15为控制WP引脚；
 3、当不用GPI05控制时，直接用按键进行控制，案件按下WP=0；按键松开WP=1；
-x-special/nautilus-clipboard
-copy
-file:///tmp/VMwareDnD/MtbUn9/IMG_20210916_110602.jpg
-x-special/nautilus-clipboard
-copy
-file:///tmp/VMwareDnD/KawUI7/IMG_20210916_110616.jpg
+

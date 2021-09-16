@@ -20,8 +20,8 @@ static const char *TAG2 = "uart0-example";
 uint8_t E2Prom_Test_Write[] = {0x04, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x0E};
 uint8_t E2Prom_Test_Write_FF[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 uint8_t E2Prom_Test_Write_00[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-uint8_t E2Prom_Test_Read[32] = {0x00};
-uint8_t E2Prom_Test_Read1[32] = {0x00};
+uint8_t E2Prom_Test_Read[9] = {0x00};
+uint8_t E2Prom_Test_Read1[9] = {0x00};
 #define BLINK_BLUE_GPIO 21
 #define BLINK_Yellow_GPIO 17
 uint8_t UART1_RX_data[9];
@@ -68,6 +68,7 @@ static void i2c_test_task(void *arg)
         ESP_LOGE(TAG, "%d", __LINE__);
         if ((E2Prom_Test_Read[0] != 0x01) || (E2Prom_Test_Read[1] != 0x02) || (E2Prom_Test_Read[2] != 0x03) || (E2Prom_Test_Read[3] != 0x04) || (E2Prom_Test_Read[4] != 0x05) || (E2Prom_Test_Read[5] != 0x06) || (E2Prom_Test_Read[6] != 0x07) || (E2Prom_Test_Read[7] != 0x08) || (E2Prom_Test_Read[8] != 0x0A))
         {
+            gpio_set_level(BLINK_BLUE_GPIO, 1);
             ESP_LOGE(TAG, "Failed to  EEPROM");
             gpio_set_level(BLINK_Yellow_GPIO, 0);
             vTaskDelay(100 / portTICK_PERIOD_MS);
@@ -100,13 +101,16 @@ void app_main(void)
     gpio_set_direction(BLINK_BLUE_GPIO, GPIO_MODE_OUTPUT);
     gpio_pad_select_gpio(BLINK_Yellow_GPIO);
     gpio_set_direction(BLINK_Yellow_GPIO, GPIO_MODE_OUTPUT);
+    
+    gpio_set_level(BLINK_Yellow_GPIO, 1);
+    gpio_set_level(BLINK_BLUE_GPIO, 0);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+    gpio_set_level(BLINK_BLUE_GPIO, 1);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
 
     E2prom_Init();
     Uart0_Init();
-    gpio_set_level(BLINK_Yellow_GPIO, 0);
-    vTaskDelay(500 / portTICK_PERIOD_MS);
-    gpio_set_level(BLINK_Yellow_GPIO, 1);
-    vTaskDelay(500 / portTICK_PERIOD_MS);
+    
 
     xTaskCreate(i2c_test_task, "i2c_test_task_0", 1024 * 2, NULL, 1, NULL);
     xTaskCreate(app_uart_task, "uart_task", 4096, NULL, 3, NULL);
