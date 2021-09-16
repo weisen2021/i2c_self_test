@@ -32,7 +32,7 @@ void Uart0_Init(void)
 	uart_driver_install(UART_NUM_0, BUF_SIZE * 2, 0, 0, NULL, 0);
 	uart_param_config(UART_NUM_0, &uart_config);
 	uart_set_pin(UART_NUM_0, UART0_TXD, UART0_TXD, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-	ESP_LOGE(TAG, "Failed to  uart0");
+	ESP_LOGI(TAG, "START to  uart0");
 
 }
 

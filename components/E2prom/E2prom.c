@@ -49,7 +49,7 @@ void E2prom_Init(void)
     #if E2PROM_WP_EN
     gpio_pad_select_gpio(E2PROM_WP_GPIO);
     gpio_set_direction(E2PROM_WP_GPIO, GPIO_MODE_OUTPUT);
-	gpio_set_level(E2PROM_WP_GPIO, 1);
+    gpio_set_level(E2PROM_WP_GPIO, 1);
     #endif
 
     while (E2P_Check() != true)
@@ -64,7 +64,7 @@ void E2prom_Init(void)
 
 esp_err_t AT24CXX_WriteOneByte(uint16_t reg_addr, uint8_t dat)
 {
-     #if E2PROM_WP_EN
+    #if E2PROM_WP_EN
     gpio_set_level(E2PROM_WP_GPIO, 0);
 
     esp_err_t ret;
@@ -82,7 +82,7 @@ esp_err_t AT24CXX_WriteOneByte(uint16_t reg_addr, uint8_t dat)
     return ret;
     
 
-    #else
+   #else
 
     esp_err_t ret;
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
@@ -109,9 +109,9 @@ esp_err_t AT24CXX_ReadOneByte(uint16_t reg_addr, uint8_t *data)
 
     i2c_master_start(cmd);
     i2c_master_write_byte(cmd, (DEV_ADD + ((reg_addr / 256) << 1)) + 1, ACK_CHECK_EN);
-
+    //ESP_LOGI(TAG, "%d", __LINE__);
     i2c_master_read_byte(cmd, data, NACK_VAL); //只读1 byte 不需要应答
-
+    //ESP_LOGE(TAG, "%d", __LINE__);
     i2c_master_stop(cmd);
     ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
     i2c_cmd_link_delete(cmd);
@@ -183,7 +183,7 @@ esp_err_t FM24C_WriteOneByte(uint16_t reg_addr, uint8_t dat)
     return ret;
     
 
-    #else
+   #else
       
     esp_err_t ret;
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
@@ -205,28 +205,6 @@ esp_err_t FM24C_WriteOneByte(uint16_t reg_addr, uint8_t dat)
     #endif
 }
 
-// esp_err_t FM24C_ReadOneByte(uint16_t reg_addr, uint8_t *data)
-// {
-
-//     esp_err_t ret;
-//     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-//     i2c_master_start(cmd);
-//     i2c_master_write_byte(cmd, (DEV_ADD + ((reg_addr / 256) << 1)), ACK_CHECK_EN);
-//     i2c_master_write_byte(cmd, (reg_addr % 256), ACK_CHECK_EN);
-
-//     i2c_master_start(cmd);
-//     i2c_master_write_byte(cmd, (DEV_ADD + ((reg_addr / 256) << 1)) + 1, ACK_CHECK_EN);
-
-//     i2c_master_read_byte(cmd, data, NACK_VAL); //只读1 byte 不需要应答
-
-//     i2c_master_stop(cmd);
-//     ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
-//     i2c_cmd_link_delete(cmd);
-
-//     vTaskDelay(20 / portTICK_RATE_MS);
-
-//     return ret;
-// }
 
 esp_err_t FM24C_Write(uint16_t reg_addr, uint8_t *dat, uint16_t len)
 {
@@ -748,7 +726,7 @@ void E2prom_set_0XFF(void)
 
 static bool E2P_Check(void)
 {
-    uint8_t Check_dat = 0x11;
+    uint8_t Check_dat = 0x55;
     uint8_t temp;
     esp_err_t ret;
     i2c_cmd_handle_t cmd;
@@ -846,13 +824,13 @@ static bool E2P_Check(void)
     return false;
     
 
-    #else
+   #else
 
     while (1)
     {
-        cmd = i2c_cmd_link_create();
-        i2c_master_start(cmd);
-        i2c_master_write_byte(cmd, AT_DEV_ADD, ACK_CHECK_EN);
+         cmd = i2c_cmd_link_create();
+         i2c_master_start(cmd);
+         i2c_master_write_byte(cmd, AT_DEV_ADD, ACK_CHECK_EN);
         i2c_master_stop(cmd);
         ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 50 / portTICK_RATE_MS);
         i2c_cmd_link_delete(cmd);
@@ -935,7 +913,7 @@ static bool E2P_Check(void)
     ESP_LOGI(TAG, "eeprom check fail!\n");
     return false;
 
-    #endif
+     #endif
 }
 
 esp_err_t Nvs_Write_32(const char *Key, uint32_t dat)

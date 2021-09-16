@@ -33,7 +33,7 @@
 #define FE_DEV_ADD 0XAE
 
 #define AT_E2P_SIZE 1024
-#define at24c08_addr0 0X57
+//#define at24c08_addr0 0X57
 #define AT_DEV_ADD 0XA8
 
 #define PRODUCT_ID_LEN 9
