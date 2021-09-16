@@ -5,7 +5,7 @@ I2C_MASTER_SDA_IO 32
 BLINK_BLUE_GPIO 21
 BLINK_Yellow_GPIO 17
 
-# 试验方法 2021.9.15
+## 试验方法 2021.9.15
 1、电脑串口发送9字节的数据，
 2、当mcu判断接收到数据后，将EEPROM中的指定位置全部置1，并将串口数据写入到指定内存中；
 3、EEPROM读取这个位置的数据；
